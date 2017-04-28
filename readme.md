@@ -1,6 +1,6 @@
 # Tree Structure - Table Extraction
 
-Snorkel has been successfully extended to perform information extraction from semi-structured data such as tables. A crucial step in this process is the construction of the hierarchical tree of context objects such as text blocks, figures, tables, etc. The system currently uses PDF to HTML conversion provided by Adobe Acrobat converter. Adobe Acrobat converter is not an open source tool and this can be very inconvenient for Snorkel users. We therefore need to build our own module as replacement to adobe acrobat. Several open source tools are available for pdf to html conversion but these tools do not preserve the cell structure in a table. Our goal in this project is to develop a tool that extracts text, figures and tables in a pdf document and maintains the structure of the document using a tree data structure. 
+Fonduer has been successfully extended to perform information extraction from richly formatted data such as tables. A crucial step in this process is the construction of the hierarchical tree of context objects such as text blocks, figures, tables, etc. The system currently uses PDF to HTML conversion provided by Adobe Acrobat converter. Adobe Acrobat converter is not an open source tool and this can be very inconvenient for Snorkel users. We therefore need to build our own module as replacement to adobe acrobat. Several open source tools are available for pdf to html conversion but these tools do not preserve the cell structure in a table. Our goal in this project is to develop a tool that extracts text, figures and tables in a pdf document and maintains the structure of the document using a tree data structure. 
 
 This project is using the table-extraction tool (https://github.com/xiao-cheng/table-extraction). 
 
@@ -8,15 +8,17 @@ This project is using the table-extraction tool (https://github.com/xiao-cheng/t
 
 ```pip install -r requirements.txt```
 
-## Usage - environment variables 
+## Environment variables 
 
 First, set environment variables. The ```DATAPATH``` folder should contain the pdf files that need to be processed. 
 
 ```source set_env.sh```
 
-### The table-extraction/tutorials/ folder contains a notebook with example usage of the TableExtractML object. 
+## Tutorial
+ 
+The ```table-extraction/tutorials/``` folder contains a notebook ```table-extraction-demo.ipynb```. In this demo we detail the different steps of the table extraction tool and display some examples of table detection results for paleo papers. However, to extract tables for new documents, the user should directly use the command line tool detailed in the next section. 
 
-## Usage - command line 
+## Command Line Usage
 
 To use the tool via command line:
 
@@ -33,7 +35,7 @@ Script to extract tables bounding boxes from PDF files using a machine
 learning approach. if model.pkl is saved in the model-path, the pickled model
 will be used for prediction. Otherwise the model will be retrained. If --mode
 is test (by default), the script will create a .bbox file containing the
-tables for the pdf documents listed in the file --test-pdf If --mode is dev,
+tables for the pdf documents listed in the file --test-pdf. If --mode is dev,
 the script will also extract ground truth labels fot the test data and compute
 some statistics. To run the script on new documents, specify the path to the
 list of pdf to analyze using the argument --test-pdf. Those files must be
@@ -71,7 +73,7 @@ We provide an evaluation code to compute recall, precision and F1 score at the c
 usage: char_level_evaluation.py [-h] pdf_files extracted_bbox gt_bbox
 
 Computes scores for the table localization task. Returns Recall and Precision
-for the sub-objects level (Characters in text). If DISPLAY=TRUE, display GT in
+for the sub-objects level (characters in text). If DISPLAY=TRUE, display GT in
 Red and extracted bboxes in Blue
 
 positional arguments:<br />

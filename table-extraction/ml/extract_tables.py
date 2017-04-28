@@ -204,7 +204,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(
             description="""Script to extract tables bounding boxes from PDF files using a machine learning approach.
             if model.pkl is saved in the model-path, the pickled model will be used for prediction. Otherwise the model will be retrained.
-            If --mode is test (by default), the script will create a .bbox file containing the tables for the pdf documents listed in the file --test-pdf
+            If --mode is test (by default), the script will create a .bbox file containing the tables for the pdf documents listed in the file --test-pdf.
             If --mode is dev, the script will also extract ground truth labels fot the test data and compute some statistics.
             To run the script on new documents, specify the path to the list of pdf to analyze using the argument --test-pdf. Those files must be saved in the DATAPATH folder.""")
     parser.add_argument('--mode', type=str, default='test', help='usage mode dev or test, default is test')

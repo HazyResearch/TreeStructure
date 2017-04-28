@@ -99,7 +99,7 @@ def display_results(pdf_file, page_num, bbox, color, page_width=612, page_height
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
             description="""Computes scores for the table localization task.
-            Returns Recall and Precision for the sub-objects level (Characters in text).
+            Returns Recall and Precision for the sub-objects level (characters in text).
             If DISPLAY=TRUE, display GT in Red and extracted bboxes in Blue""")
     parser.add_argument("pdf_files", help="list of paths of PDF file to process")
     parser.add_argument("extracted_bbox", help="extracting bounding boxes (one line per pdf file)")
