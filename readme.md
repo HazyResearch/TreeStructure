@@ -20,16 +20,17 @@ The ```table-extraction/tutorials/``` folder contains a notebook ```table-extrac
 
 ## Command Line Usage
 
-To use the tool via command line:
+To use the tool via command line, run:
 
 ```source set_env.sh```
 
 ```python table-extraction/ml/extract_tables.py [-h]```
 
-usage: extract_tables.py [-h] [--mode MODE] [--train-pdf TRAIN_PDF]<br />
-                         [--test-pdf TEST_PDF] [--gt-train GT_TRAIN]<br />
-                         [--gt-test GT_TEST] [--model-path MODEL_PATH]<br />
-                         [--iou-thresh IOU_THRESH]<br />
+```
+usage: extract_tables.py [-h] [--mode MODE] [--train-pdf TRAIN_PDF]
+                         [--test-pdf TEST_PDF] [--gt-train GT_TRAIN]
+                         [--gt-test GT_TEST] [--model-path MODEL_PATH]
+                         [--iou-thresh IOU_THRESH]
 
 Script to extract tables bounding boxes from PDF files using a machine
 learning approach. if model.pkl is saved in the model-path, the pickled model
@@ -42,20 +43,22 @@ list of pdf to analyze using the argument --test-pdf. Those files must be
 saved in the DATAPATH folder.
 
 optional arguments:
-  -h, --help            show this help message and exit<br />
-  --mode MODE           usage mode dev or test, default is test<br />
+  -h, --help            show this help message and exit
+  --mode MODE           usage mode dev or test, default is test
   --train-pdf TRAIN_PDF
-                        list of pdf file names used for training. Those files<br />
-                        must be saved in the DATAPATH folder (cf set_env.sh)<br />
-  --test-pdf TEST_PDF   list of pdf file names used for testing. Those files<br />
-                        must be saved in the DATAPATH folder (cf set_env.sh)<br />
-  --gt-train GT_TRAIN   ground truth train tables<br />
-  --gt-test GT_TEST     ground truth test tables<br />
-  --model-path MODEL_PATH<br />
+                        list of pdf file names used for training. Those files
+                        must be saved in the DATAPATH folder (cf set_env.sh)
+                        must be saved in the DATAPATH folder (cf set_env.sh)
+  --test-pdf TEST_PDF   list of pdf file names used for testing. Those files
+                        must be saved in the DATAPATH folder (cf set_env.sh)
+  --gt-train GT_TRAIN   ground truth train tables
+  --gt-test GT_TEST     ground truth test tables
+  --model-path MODEL_PATH
                         pretrained model
   --iou-thresh IOU_THRESH
-                        intersection over union threshold to remove duplicate<br />
+                        intersection over union threshold to remove duplicate
                         tables
+```
                         
                         
 Each document must be saved in the ```DATAPATH``` folder. 
@@ -70,16 +73,18 @@ We provide an evaluation code to compute recall, precision and F1 score at the c
 
 ```python table-extraction/evaluation/char_level_evaluation.py [-h] pdf_files extracted_bbox gt_bbox```
 
+```
 usage: char_level_evaluation.py [-h] pdf_files extracted_bbox gt_bbox
 
 Computes scores for the table localization task. Returns Recall and Precision
 for the sub-objects level (characters in text). If DISPLAY=TRUE, display GT in
 Red and extracted bboxes in Blue
 
-positional arguments:<br />
-  pdf_files       list of paths of PDF file to process<br />
-  extracted_bbox  extracting bounding boxes (one line per pdf file)<br />
-  gt_bbox         ground truth bounding boxes (one line per pdf file)<br />
+positional arguments:
+  pdf_files       list of paths of PDF file to process
+  extracted_bbox  extracting bounding boxes (one line per pdf file)
+  gt_bbox         ground truth bounding boxes (one line per pdf file)
 
-optional arguments:<br />
+optional arguments:
   -h, --help      show this help message and exit
+```
