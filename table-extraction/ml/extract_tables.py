@@ -189,6 +189,14 @@ def filter_bboxes(tables, iou_thresh):
             bboxes = [tuple(table[1:])]
     return pdf_idx_to_filtered_bboxes
 
+def bbox_to_dict(tables):
+    bbox_dict = {}
+    for table in tables:
+        try:
+            bbox_dict[table[0]] += [tuple(table[1:])]
+        except KeyError:
+            bbox_dict[table[0]] = [tuple(table[1:])]
+    return bbox_dict
 
 def write_bbox_to_file(bbox_file, pdf_idx_to_filtered_bboxes, num_test):
     for i in range(num_test):
@@ -242,8 +250,9 @@ if __name__ == '__main__':
         print "Mode not recognized, pick dev or test."
         sys.exit()
     predicted_tables = tables_test[np.flatnonzero(y_pred)]
-    # remove duplicate tables
-    pdf_idx_to_filtered_bboxes = filter_bboxes(predicted_tables, args.iou_thresh)
+    # todo: remove duplicate tables
+    # pdf_idx_to_filtered_bboxes = filter_bboxes(predicted_tables, args.iou_thresh)
+    pdf_idx_to_filtered_bboxes = bbox_to_dict(predicted_tables)
     # write tables to file
     bbox_file = open(args.test_pdf + '.bbox', 'w')
     write_bbox_to_file(bbox_file, pdf_idx_to_filtered_bboxes, num_test)
