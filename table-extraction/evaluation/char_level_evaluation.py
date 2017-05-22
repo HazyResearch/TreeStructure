@@ -74,6 +74,8 @@ def rescale(y0, x0, y1, x1, w_ratio, h_ratio):
 def get_bboxes_from_line(line, default_width=612.0, default_height=792.0):
     if line == "NO_TABLES":
         return {}
+    if line == "SCANNED_DOC":
+        return {}
     bboxes = {}
     for bbox in line.split(";"):
         page_num, page_width, page_height, y0, x0, y1, x1 = bbox[1:-1].split(",")

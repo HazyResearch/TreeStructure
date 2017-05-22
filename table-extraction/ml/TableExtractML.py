@@ -9,7 +9,7 @@ from utils.display_utils import pdf_to_img
 from ml.features import get_alignment_features, get_lines_features
 from wand.color import Color
 from wand.drawing import Drawing
-
+from pdfminer.utils import Plane
 
 class TableExtractorML(object):
     """
@@ -27,21 +27,65 @@ class TableExtractorML(object):
         self.candidates = []
         self.features = []
         self.iou_thresh = 0.8
+        self.scanned = False
+
+    def identify_scanned_page(self, boxes, page_bbox, page_width, page_height):
+        plane = Plane(page_bbox)
+        plane.extend(boxes)
+        cid2obj = [set([i]) for i in xrange(len(boxes))] # initialize clusters
+        obj2cid = range(len(boxes)) # default object map to cluster with its own index
+        prev_clusters = obj2cid
+        while(True):
+            for i1, b1 in enumerate(boxes):
+                for i2, b2 in enumerate(boxes):
+                    box1 = b1.bbox
+                    box2 = b2.bbox
+                    if(box1[0]==box2[0] and box1[2]==box2[2] and round(box1[3])==round(box2[1])):
+                        min_i = min(i1, i2)
+                        max_i = max(i1, i2)
+                        cid1 = obj2cid[min_i]
+                        cid2 = obj2cid[max_i]
+                        for obj_iter in cid2obj[cid2]:
+                            cid2obj[cid1].add(obj_iter)
+                            obj2cid[obj_iter] = cid1
+                        cid2obj[cid2] = set()
+            if(prev_clusters == obj2cid):
+                break
+            prev_clusters = obj2cid
+        clusters = [[boxes[i] for i in cluster] for cluster in filter(bool, cid2obj)]
+        if(len(clusters) == 1 and clusters[0][0].bbox[0]<-0.0 and clusters[0][0].bbox[1]<=0 and abs(clusters[0][0].bbox[2]-page_width)<=5 and abs(clusters[0][0].bbox[3].y1-page_height)<=5):
+            return True
+        return False
 
     def parse(self):
+        is_scanned = False
+        lin_seg_present = False
         for page_num, layout in enumerate(analyze_pages(self.pdf_file)):
             page_num += 1  # indexes start at 1
             elems, font_stat = normalize_pdf(layout, scaler=1)
             self.elems[page_num] = elems
             self.font_stats[page_num] = font_stat
+            #code to detect if the page is scanned
+            if(len(elems.segments)>0):
+                lin_seg_present = True
+            for fig in elems.figures:
+                if(fig.bbox[0]<=0.0 and fig.bbox[1]<=0.0 and round(fig.bbox[2])==round(elems.layout.width) and round(fig.bbox[3])==round(elems.layout.height)):
+                    is_scanned = True
+            page_scanned = self.identify_scanned_page(elems.figures, elems.layout.bbox, elems.layout.width, elems.layout.height)
+            if(page_scanned==True):
+                is_scanned = True
+        if(is_scanned==True or lin_seg_present==False): #doc is scanned if any page is scanned
+            self.scanned = True    
 
     def get_candidates_and_features(self):
         self.parse()
+        if(self.scanned):
+            return [], [], self.scanned
         for page_num in self.elems.keys():
             page_boxes, page_features = self.get_candidates_and_features_page_num(page_num)
             self.candidates += page_boxes
             self.features += list(page_features)
-        return self.candidates, self.features
+        return self.candidates, self.features, self.scanned
 
     def get_candidates_and_features_page_num(self, page_num):
         elems = self.elems[page_num]

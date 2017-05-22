@@ -33,7 +33,7 @@ def get_features_and_labels(pdf_list, gt_list):
             print "{} documents processed out of {}".format(i, len(pdf_files))
         gt_tables = get_bboxes_from_line(gt[i])
         extractor = TableExtractorML(os.environ['DATAPATH'] + pdf_file)
-        bboxes, features = extractor.get_candidates_and_features()
+        bboxes, features, is_scanned = extractor.get_candidates_and_features()
         labels = extractor.get_labels(gt_tables)
         bboxes = [[i] + list(bbox) for bbox in bboxes]
         if i == 0:
@@ -69,22 +69,28 @@ def load_train_data(pdf_list, gt_list):
 
 def get_features(pdf_list):
     pdf_files = [pdf_file.rstrip() for pdf_file in open(pdf_list).readlines()]
+    X = []
     tables = []
+    scanned_indices = []
     for i, pdf_file in enumerate(pdf_files):
         if i % 10 == 0:
             print "{} documents processed out of {}".format(i, len(pdf_files))
         extractor = TableExtractorML(os.environ['DATAPATH'] + pdf_file)
-        bboxes, features = extractor.get_candidates_and_features()
+        bboxes, features, is_scanned = extractor.get_candidates_and_features()
+        if(is_scanned):
+            #document is scanned
+            scanned_indices.append(i)
         bboxes = [[i] + list(bbox) for bbox in bboxes]
-        if i == 0:
+        if len(X)==0:
             X = np.array(features)
             tables = np.array(bboxes)
         else:
             X = np.concatenate((X, np.array(features)), axis=0)
             tables = np.concatenate((tables, bboxes), axis=0)
-    X = preprocessing.scale(X, axis=0)
+    if(len(X)>0):
+        X = preprocessing.scale(X, axis=0)
     print "Features computed!"
-    return X, tables
+    return X, tables, scanned_indices
 
 
 def load_test_data(pdf_list):
@@ -93,14 +99,16 @@ def load_test_data(pdf_list):
         # load pickled data
         X = pickle.load(open(pdf_list + '.features.pkl', 'rb'))
         tables = pickle.load(open(pdf_list + '.candidates.pkl', 'rb'))
+        scanned_indices = pickle.load(open(pdf_list + '.scanned.pkl', 'rb'))
         print "Features loaded!"
     else:
         print "Building feature matrix for {}".format(pdf_list)
         # compute and pickle feature matrix
-        X, tables = get_features(pdf_list)
+        X, tables, scanned_indices = get_features(pdf_list)
         pickle.dump(X, open(pdf_list + '.features.pkl', 'wb'))
         pickle.dump(tables, open(pdf_list + '.candidates.pkl', 'wb'))
-    return X, tables.astype(np.int)
+        pickle.dump(scanned_indices, open(pdf_list + '.scanned.pkl', 'wb'))
+    return X, tables.astype(np.int), scanned_indices
 
 
 def compute_overlap_matrix(pdf_bboxes, iou_thresh):
@@ -198,8 +206,11 @@ def bbox_to_dict(tables):
             bbox_dict[table[0]] = [tuple(table[1:])]
     return bbox_dict
 
-def write_bbox_to_file(bbox_file, pdf_idx_to_filtered_bboxes, num_test):
+def write_bbox_to_file(bbox_file, pdf_idx_to_filtered_bboxes, num_test, scanned_test):
     for i in range(num_test):
+        if(i in scanned_test):
+            bbox_file.write("SCANNED_DOC\n")
+            continue
         try:
             filtered_bboxes = pdf_idx_to_filtered_bboxes[i]
             bbox_file.write(";".join([str(bbox) for bbox in filtered_bboxes]) + "\n")
@@ -244,15 +255,21 @@ if __name__ == '__main__':
         compute_stats(y_pred, y_test)
     elif args.mode == 'test':
         # load test data (with no ground truth)
-        X_test, tables_test = load_test_data(args.test_pdf)
-        y_pred = model.predict(X_test)
+        X_test, tables_test, scanned_test = load_test_data(args.test_pdf)
+        if(len(X_test) == 0):   #all docs are scanned
+            y_pred = []
+        else:
+            y_pred = model.predict(X_test)
     else:
         print "Mode not recognized, pick dev or test."
         sys.exit()
-    predicted_tables = tables_test[np.flatnonzero(y_pred)]
-    # todo: remove duplicate tables
-    # pdf_idx_to_filtered_bboxes = filter_bboxes(predicted_tables, args.iou_thresh)
-    pdf_idx_to_filtered_bboxes = bbox_to_dict(predicted_tables)
-    # write tables to file
+    if(len(y_pred) != 0):
+        predicted_tables = tables_test[np.flatnonzero(y_pred)]
+        # todo: remove duplicate tables
+        # pdf_idx_to_filtered_bboxes = filter_bboxes(predicted_tables, args.iou_thresh)
+        pdf_idx_to_filtered_bboxes = bbox_to_dict(predicted_tables)
+        # write tables to file
+    else:
+        pdf_idx_to_filtered_bboxes = []
     bbox_file = open(args.test_pdf + '.bbox', 'w')
-    write_bbox_to_file(bbox_file, pdf_idx_to_filtered_bboxes, num_test)
+    write_bbox_to_file(bbox_file, pdf_idx_to_filtered_bboxes, num_test, scanned_test)
