@@ -1,12 +1,11 @@
 import numpy as np
-
-from utils.bbox_utils import get_rectangles, compute_iou
-from utils.lines_utils import reorder_lines, get_vertical_and_horizontal, extend_vertical_lines, \
-    merge_vertical_lines, merge_horizontal_lines, extend_horizontal_lines
+from ml.features import get_alignment_features, get_lines_features
 from pdf.pdf_parsers import parse_layout
 from pdf.pdf_utils import normalize_pdf, analyze_pages
+from utils.bbox_utils import get_rectangles, compute_iou
 from utils.display_utils import pdf_to_img
-from ml.features import get_alignment_features, get_lines_features
+from utils.lines_utils import reorder_lines, get_vertical_and_horizontal, extend_vertical_lines, \
+    merge_vertical_lines, merge_horizontal_lines, extend_horizontal_lines
 from wand.color import Color
 from wand.drawing import Drawing
 
@@ -107,7 +106,7 @@ class TableExtractorML(object):
         img = pdf_to_img(self.pdf_file, page_num, page_width, page_height)
         draw = Drawing()
         draw.fill_color = Color('rgba(0, 0, 0, 0)')
-        color=Color('blue')
+        color = Color('blue')
         draw.stroke_color = color
         for block in bboxes:
             top, left, bottom, right = block[-4:]
@@ -116,3 +115,4 @@ class TableExtractorML(object):
             draw.rectangle(left=float(left), top=float(top), right=float(right), bottom=float(bottom))
         draw(img)
         return img
+
