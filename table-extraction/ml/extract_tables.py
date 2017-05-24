@@ -7,7 +7,7 @@ import numpy as np
 from ml.TableExtractML import TableExtractorML
 from sklearn import linear_model, preprocessing, metrics
 from utils.bbox_utils import doOverlap, compute_iou, isContained
-
+from tesseract.table_extractor import extract_tables
 
 def get_bboxes_from_line(line):
     if line == "NO_TABLES":
@@ -72,6 +72,7 @@ def get_features(pdf_list):
     X = []
     tables = []
     scanned_indices = []
+    scanned_tables = {}
     for i, pdf_file in enumerate(pdf_files):
         if i % 10 == 0:
             print "{} documents processed out of {}".format(i, len(pdf_files))
@@ -80,6 +81,10 @@ def get_features(pdf_list):
         if(is_scanned):
             #document is scanned
             scanned_indices.append(i)
+            if not os.path.exists(os.environ['DATAPATH']+"tesseract_results"):
+                os.makedirs(os.environ['DATAPATH']+"tesseract_results")
+            os.system("./../tesseract/preprocess.sh "+os.environ['DATAPATH']+"tesseract_results/"+pdf_file+" "+os.environ['DATAPATH']+pdf_file)
+            scanned_tables[i] = extract_tables(os.environ['DATAPATH']+"tesseract_results/"+pdf_file+"/")
         bboxes = [[i] + list(bbox) for bbox in bboxes]
         if len(X)==0:
             X = np.array(features)
@@ -90,7 +95,7 @@ def get_features(pdf_list):
     if(len(X)>0):
         X = preprocessing.scale(X, axis=0)
     print "Features computed!"
-    return X, tables, scanned_indices
+    return X, tables, scanned_indices, scanned_tables
 
 
 def load_test_data(pdf_list):
@@ -99,16 +104,18 @@ def load_test_data(pdf_list):
         # load pickled data
         X = pickle.load(open(pdf_list + '.features.pkl', 'rb'))
         tables = pickle.load(open(pdf_list + '.candidates.pkl', 'rb'))
-        scanned_indices = pickle.load(open(pdf_list + '.scanned.pkl', 'rb'))
+        scanned_indices = pickle.load(open(pdf_list + '.scanned_indices.pkl', 'rb'))
+        scanned_tables = pickle.load(open(pdf_list + '.scanned_tables.pkl', 'rb'))
         print "Features loaded!"
     else:
         print "Building feature matrix for {}".format(pdf_list)
         # compute and pickle feature matrix
-        X, tables, scanned_indices = get_features(pdf_list)
+        X, tables, scanned_indices, scanned_tables = get_features(pdf_list)
         pickle.dump(X, open(pdf_list + '.features.pkl', 'wb'))
         pickle.dump(tables, open(pdf_list + '.candidates.pkl', 'wb'))
-        pickle.dump(scanned_indices, open(pdf_list + '.scanned.pkl', 'wb'))
-    return X, tables.astype(np.int), scanned_indices
+        pickle.dump(scanned_indices, open(pdf_list + '.scanned_indices.pkl', 'wb'))
+        pickle.dump(scanned_tables, open(pdf_list + '.scanned_tables.pkl', 'wb'))
+    return X, tables.astype(np.int), scanned_indices, scanned_tables
 
 
 def compute_overlap_matrix(pdf_bboxes, iou_thresh):
@@ -206,10 +213,10 @@ def bbox_to_dict(tables):
             bbox_dict[table[0]] = [tuple(table[1:])]
     return bbox_dict
 
-def write_bbox_to_file(bbox_file, pdf_idx_to_filtered_bboxes, num_test, scanned_test):
+def write_bbox_to_file(bbox_file, pdf_idx_to_filtered_bboxes, num_test, scanned_test, scanned_tables):
     for i in range(num_test):
         if(i in scanned_test):
-            bbox_file.write("SCANNED_DOC\n")
+            bbox_file.write(scanned_tables[i])
             continue
         try:
             filtered_bboxes = pdf_idx_to_filtered_bboxes[i]
@@ -255,7 +262,7 @@ if __name__ == '__main__':
         compute_stats(y_pred, y_test)
     elif args.mode == 'test':
         # load test data (with no ground truth)
-        X_test, tables_test, scanned_test = load_test_data(args.test_pdf)
+        X_test, tables_test, scanned_test, scanned_tables = load_test_data(args.test_pdf)
         if(len(X_test) == 0):   #all docs are scanned
             y_pred = []
         else:
@@ -272,4 +279,4 @@ if __name__ == '__main__':
     else:
         pdf_idx_to_filtered_bboxes = []
     bbox_file = open(args.test_pdf + '.bbox', 'w')
-    write_bbox_to_file(bbox_file, pdf_idx_to_filtered_bboxes, num_test, scanned_test)
+    write_bbox_to_file(bbox_file, pdf_idx_to_filtered_bboxes, num_test, scanned_test, scanned_tables)
