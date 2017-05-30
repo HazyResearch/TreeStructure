@@ -77,6 +77,22 @@ class TableExtractorML(object):
         if(is_scanned==True or lin_seg_present==False): #doc is scanned if any page is scanned
             self.scanned = True    
 
+    def get_scanned(self):
+        if(len(self.elems) == 0):
+           self.parse()
+        return self.scanned
+
+    def get_candidates(self):
+        if(len(self.elems) == 0):
+            self.parse()
+        if(self.scanned):
+            return []
+        for page_num in self.elems.keys():
+            page_boxes, page_features = self.get_candidates_and_features_page_num(page_num)
+            self.candidates += page_boxes
+            self.features += list(page_features)
+        return self.candidates
+
     def get_candidates_and_features(self):
         self.parse()
         if(self.scanned):
@@ -120,6 +136,12 @@ class TableExtractorML(object):
         except:
             nodes, features = [], []
         return [(page_num, page_width, page_height) + (node.y0, node.x0, node.y1, node.x1) for node in nodes], features
+
+    def get_elems(self):
+        return self.elems
+
+    def get_font_stats(self):
+        return self.font_stats
 
     def get_labels(self, gt_tables):
         """
