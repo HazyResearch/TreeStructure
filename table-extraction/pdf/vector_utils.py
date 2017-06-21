@@ -129,6 +129,16 @@ def reading_order(e1,e2):
         return float_cmp(b1[x0],b2[x0])
     return float_cmp(b1[y0],b2[y0])
 
+def xy_reading_order(e1, e2):
+    '''
+    A comparator to sort bboxes from left to right, top to bottom
+    '''
+    b1 = e1.bbox
+    b2 = e2.bbox
+    if round(b1[x0]) == round(b2[x0]):
+        return float_cmp(b1[y0],b2[y0])
+    return float_cmp(b1[x0],b2[x0])    
+
 def float_cmp(f1, f2):
     if f1 == f2: return 0
     return 1 if f1 > f2 else -1

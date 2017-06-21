@@ -83,13 +83,12 @@ def get_features(pdf_list):
             scanned_indices.append(i)
             if not os.path.exists(os.environ['DATAPATH']+"tesseract_results"):
                 os.makedirs(os.environ['DATAPATH']+"tesseract_results")
-            if not os.path.exists(os.environ['DATAPATH']+"tesseract_results/"+pdf_file):
-                os.system("./../tesseract/preprocess.sh "+os.environ['DATAPATH']+"tesseract_results/"+pdf_file+" "+os.environ['DATAPATH']+pdf_file)
-            try:
-                scanned_tables[i] = extract_tables(os.environ['DATAPATH']+"tesseract_results/"+pdf_file+"/")
-            except:
-                scanned_tables[i] = "NO_TABLES\n"
-            continue
+            os.system("./../tesseract/preprocess.sh "+os.environ['DATAPATH']+"tesseract_results/"+pdf_file+" "+os.environ['DATAPATH']+pdf_file)
+	    try:
+            	scanned_tables[i] = extract_tables(os.environ['DATAPATH']+"tesseract_results/"+pdf_file+"/")
+	    except:
+		scanned_tables[i] = "NO_TABLES\n"
+	    continue
         bboxes = [[i] + list(bbox) for bbox in bboxes]
         if len(X)==0:
             X = np.array(features)

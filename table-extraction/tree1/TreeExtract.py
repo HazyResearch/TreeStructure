@@ -3,7 +3,7 @@ import numpy as np
 from utils.bbox_utils import get_rectangles, compute_iou
 from utils.lines_utils import reorder_lines, get_vertical_and_horizontal, extend_vertical_lines, \
     merge_vertical_lines, merge_horizontal_lines, extend_horizontal_lines
-from pdf.pdf_parsers import parse_layout
+from pdf.pdf_parsers import parse_layout, parse_tree_structure
 from pdf.pdf_utils import normalize_pdf, analyze_pages
 from utils.display_utils import pdf_to_img
 from ml.features import get_alignment_features, get_lines_features
@@ -11,9 +11,9 @@ from wand.color import Color
 from wand.drawing import Drawing
 from pdfminer.utils import Plane
 
-class TableExtractorML(object):
+class TreeExtractor(object):
     """
-    Object to extract tables regions from pdf files
+    Object to extract tree structure from pdf files
     """
 
     def __init__(self, pdf_file):
@@ -28,6 +28,8 @@ class TableExtractorML(object):
         self.features = []
         self.iou_thresh = 0.8
         self.scanned = False
+        self.tree={}
+        self.tables={}
 
     def identify_scanned_page(self, boxes, page_bbox, page_width, page_height):
         plane = Plane(page_bbox)
@@ -77,31 +79,15 @@ class TableExtractorML(object):
         if(is_scanned==True or lin_seg_present==False): #doc is scanned if any page is scanned
             self.scanned = True    
 
-    def get_scanned(self):
+    def is_scanned(self):
         if(len(self.elems) == 0):
            self.parse()
         return self.scanned
 
-    def get_candidates(self):
-        if(len(self.elems) == 0):
-            self.parse()
-        if(self.scanned):
-            return []
-        for page_num in self.elems.keys():
-            page_boxes, page_features = self.get_candidates_and_features_page_num(page_num)
-            self.candidates += page_boxes
-            self.features += list(page_features)
-        return self.candidates
-
-    def get_candidates_and_features(self):
-        self.parse()
-        if(self.scanned):
-            return [], [], self.scanned
-        for page_num in self.elems.keys():
-            page_boxes, page_features = self.get_candidates_and_features_page_num(page_num)
-            self.candidates += page_boxes
-            self.features += list(page_features)
-        return self.candidates, self.features, self.scanned
+    def get_tables_page_num(self, page_num):
+        page_boxes, _ = self.get_candidates_and_features_page_num(page_num)
+        tables = page_boxes
+        return tables
 
     def get_candidates_and_features_page_num(self, page_num):
         elems = self.elems[page_num]
@@ -143,42 +129,19 @@ class TableExtractorML(object):
     def get_font_stats(self):
         return self.font_stats
 
-    def get_labels(self, gt_tables):
-        """
-        :param gt_tables: dict, keys are page number and values are list of tables bbox within that page
-        :return:
-        """
-        labels = np.zeros(len(self.candidates))
-        for i, candidate in enumerate(self.candidates):
-            page_num = candidate[0]
-            try:
-                tables = gt_tables[page_num]
-                for gt_table in tables:
-                    page_width, page_height, y0, x0, y1, x1 = gt_table
-                    w_ratio = float(candidate[1]) / page_width
-                    h_ratio = float(candidate[2]) / page_height
-                    rescaled_gt_table = (y0 * h_ratio, x0 * w_ratio, y1 * h_ratio, x1 * w_ratio)
-                    iou = compute_iou(candidate[-4:], rescaled_gt_table)
-                    if iou > self.iou_thresh:
-                        # candidate region is a table
-                        labels[i] = 1
-            except KeyError:
-                # any of the candidates is a true table, all zero labels
-                pass
-        return labels
-
-    def display_bounding_boxes(self, page_num, bboxes, alternate_colors=True):
-        elems = self.elems[page_num]
-        page_width, page_height = int(elems.layout.width), int(elems.layout.height)
-        img = pdf_to_img(self.pdf_file, page_num, page_width, page_height)
-        draw = Drawing()
-        draw.fill_color = Color('rgba(0, 0, 0, 0)')
-        color=Color('blue')
-        draw.stroke_color = color
-        for block in bboxes:
-            top, left, bottom, right = block[-4:]
-            draw.stroke_color = Color('rgba({},{},{}, 1)'.format(
-                    str(np.random.randint(255)), str(np.random.randint(255)), str(np.random.randint(255))))
-            draw.rectangle(left=float(left), top=float(top), right=float(right), bottom=float(bottom))
-        draw(img)
-        return img
+    def get_tree_structure(self, model):
+        if(model is None):  #use heuristics to get tables
+            for page_num in self.elems.keys():
+                self.tables[page_num] = self.get_tables_page_num(page_num)
+        else: #use ML to get tables
+            for page_num in self.elems.keys():
+                table_candidates, candidates_features = self.get_candidates_and_features_page_num(page_num)
+                self.tables[page_num] = []
+                if(len(candidates_features) != 0):
+                    table_predictions = model.predict(candidates_features)
+                    self.tables[page_num] = [table_candidates[i] for i in range(len(table_candidates)) if table_predictions[i]>0.5 ]
+        ref_page_seen = False   #Manage References
+        for page_num in self.elems.keys():
+            self.tree[page_num], ref_page_seen = parse_tree_structure(self.elems[page_num], self.font_stats[page_num], page_num, ref_page_seen, self.tables[page_num])
+            self.tree[page_num]["table"] = self.tables[page_num]
+        return self.tree
