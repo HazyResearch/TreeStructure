@@ -867,7 +867,6 @@ def extract_text_candidates(boxes, page_bbox, avg_font_pts, width, char_width, p
     tree["list"] = [(page_num, page_width, page_height) + (node.y0, node.x0, node.y1, node.x1) for node in newer_nodes if node.type=="List"]
     return tree, new_ref_page_seen
 
-
 def merge_nodes(nodes, plane, page_stat, merge_indices):
     '''
     Merges overlapping nodes

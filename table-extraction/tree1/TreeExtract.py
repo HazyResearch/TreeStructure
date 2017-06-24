@@ -6,10 +6,13 @@ from utils.lines_utils import reorder_lines, get_vertical_and_horizontal, extend
 from pdf.pdf_parsers import parse_layout, parse_tree_structure
 from pdf.pdf_utils import normalize_pdf, analyze_pages
 from utils.display_utils import pdf_to_img
-from ml.features import get_alignment_features, get_lines_features
+from ml.features import get_alignment_features, get_lines_features, get_mentions_within_bbox
 from wand.color import Color
 from wand.drawing import Drawing
 from pdfminer.utils import Plane
+import tabula
+import json
+from pdf.layout_utils import *
 
 class TreeExtractor(object):
     """
@@ -28,8 +31,8 @@ class TreeExtractor(object):
         self.features = []
         self.iou_thresh = 0.8
         self.scanned = False
-        self.tree={}
-        self.tables={}
+        self.tree = {}
+        self.html = ""
 
     def identify_scanned_page(self, boxes, page_bbox, page_width, page_height):
         plane = Plane(page_bbox)
@@ -130,18 +133,70 @@ class TreeExtractor(object):
         return self.font_stats
 
     def get_tree_structure(self, model):
+        tables={}
         if(model is None):  #use heuristics to get tables
             for page_num in self.elems.keys():
-                self.tables[page_num] = self.get_tables_page_num(page_num)
+                tables[page_num] = self.get_tables_page_num(page_num)
         else: #use ML to get tables
             for page_num in self.elems.keys():
                 table_candidates, candidates_features = self.get_candidates_and_features_page_num(page_num)
-                self.tables[page_num] = []
+                tables[page_num] = []
                 if(len(candidates_features) != 0):
                     table_predictions = model.predict(candidates_features)
-                    self.tables[page_num] = [table_candidates[i] for i in range(len(table_candidates)) if table_predictions[i]>0.5 ]
+                    tables[page_num] = [table_candidates[i] for i in range(len(table_candidates)) if table_predictions[i]>0.5 ]
         ref_page_seen = False   #Manage References
         for page_num in self.elems.keys():
-            self.tree[page_num], ref_page_seen = parse_tree_structure(self.elems[page_num], self.font_stats[page_num], page_num, ref_page_seen, self.tables[page_num])
-            self.tree[page_num]["table"] = self.tables[page_num]
+            self.tree[page_num], ref_page_seen = parse_tree_structure(self.elems[page_num], self.font_stats[page_num], page_num, ref_page_seen, tables[page_num])
+            self.tree[page_num]["table"] = tables[page_num]
         return self.tree
+
+    def get_html_tree(self):
+        self.html = "<html>"
+        for page_num in self.elems.keys():
+            page_html = "<div id="+str(page_num)+">"
+            boxes = []
+            for clust in self.tree[page_num]:
+                for (pnum, pwidth, pheight, top, left, bottom, right) in self.tree[page_num][clust]:
+                    boxes += [[clust.lower().replace(" ","_"), top, left, bottom, right]]
+            boxes.sort(cmp=two_column_paper_order)
+            for box in boxes:
+                if(box[0] == "table"):
+                    table = box[1:]
+                    table_html = self.get_html_table(table, page_num)
+                    page_html += table_html
+                elif(box[0] == "figure"):
+                    fig_str = [str(i) for i in box[1:]]
+                    fig_html = "<figure bbox="+",".join(fig_str)+"></figure>"
+                    page_html += fig_html
+                else:
+                    box_html = self.get_html_others(box[1:], page_num)
+                    page_html += "<"+box[0]+">"+box_html+"</"+box[0]+">"
+            page_html += "</div>"
+            self.html += page_html
+        self.html += "</html>"
+        return self.html
+
+    def get_html_others(self, box, page_num):
+        node_html = ""
+        elems = get_mentions_within_bbox(box, self.elems[page_num].mentions)
+        elems.sort(cmp=reading_order)
+        for elem in elems:
+            node_html += elem.get_text()+" "
+        return node_html
+
+    def get_html_table(self, table, page_num):
+        table_str = [str(i) for i in table]
+        table_json = tabula.read_pdf(self.pdf_file, pages=page_num, area=table_str, output_format="json")
+        table_html = ""
+        if(len(table_json)>0):
+            table_html = "<table>"
+            for i, row in enumerate(table_json[0]["data"]):
+                row_str = "<tr>"
+                for j, column in enumerate(row):
+                    row_str += "<td>"
+                    row_str += column["text"]
+                    row_str += "</td>"
+                row_str += "</tr>"
+                table_html += row_str
+            table_html += "</table>"
+        return table_html

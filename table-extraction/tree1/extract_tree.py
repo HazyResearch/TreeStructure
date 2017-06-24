@@ -18,12 +18,12 @@ def visualize_tree(pdf_file, pdf_tree):
     v = TreeVisualizer(pdf_file)
     a = v.display_candidates(pdf_tree)
 
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
             description="""Script to extract tree structure from PDF files.""")
     parser.add_argument('--model_path', type=str, default=None, help='pretrained model')
     parser.add_argument('--pdf_file', type=str, help='pdf file name for which tree structure needs to be extracted')
+    parser.add_argument('--html_file', type=str, help='html file name where tree structure must be saved', default="pdf.html")
     args = parser.parse_args()
     model = None
     if (args.model_path is not None):
@@ -32,6 +32,12 @@ if __name__ == '__main__':
     if(not extractor.is_scanned()):
         print "Document is not scanned, building tree structure"
         pdf_tree = extractor.get_tree_structure(model)
-        imgs = visualize_tree(args.pdf_file, pdf_tree)
+        print "Tree structure built, creating html"
+        pdf_html = extractor.get_html_tree()
+        print "HTML created, writing to file"
+        f = open(args.html_file, "w")
+        f.write(pdf_html.encode("utf-8"))
+        f.close()
+        # imgs = visualize_tree(args.pdf_file, pdf_tree)
     else:
         print "Document is scanned, cannot build tree structure"

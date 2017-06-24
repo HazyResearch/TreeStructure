@@ -125,7 +125,7 @@ def reading_order(e1,e2):
     '''
     b1 = e1.bbox
     b2 = e2.bbox
-    if b1[y0] == b2[y0]:
+    if round(b1[y0]) == round(b2[y0]) or round(b1[y1]) == round(b2[y1]):
         return float_cmp(b1[x0],b2[x0])
     return float_cmp(b1[y0],b2[y0])
 
@@ -138,6 +138,15 @@ def xy_reading_order(e1, e2):
     if round(b1[x0]) == round(b2[x0]):
         return float_cmp(b1[y0],b2[y0])
     return float_cmp(b1[x0],b2[x0])    
+
+def two_column_paper_order(b1, b2):
+    '''
+    b1 = [b1.type, b1.top, b1.left, b1.bottom, b1.right]
+    b2 = [b2.type, b2.top, b2.left, b2.bottom, b2.right]
+    '''
+    if((b1[2]>b2[2] and b1[2]<b2[4]) or (b2[2]>b1[2] and b2[2]<b1[4])):
+        return float_cmp(b1[1],b2[1])
+    return float_cmp(b1[2],b2[2]) 
 
 def float_cmp(f1, f2):
     if f1 == f2: return 0
