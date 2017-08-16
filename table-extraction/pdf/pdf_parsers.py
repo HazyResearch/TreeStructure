@@ -610,7 +610,7 @@ def parse_tree_structure(elems, font_stat, page_num, ref_page_seen, tables):
 def extract_text_candidates(boxes, page_bbox, avg_font_pts, width, char_width, page_num, ref_page_seen, boxes_figures, page_width, page_height):
     #Too many "." in the Table of Content pages
     if(len(boxes) == 0 or len(boxes)>3500):
-        return [], False
+        return {}, False
     plane = Plane(page_bbox)
     plane.extend(boxes)
     

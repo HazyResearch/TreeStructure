@@ -147,8 +147,8 @@ class TreeExtractor(object):
         ref_page_seen = False   #Manage References
         for page_num in self.elems.keys():
             self.tree[page_num], ref_page_seen = parse_tree_structure(self.elems[page_num], self.font_stats[page_num], page_num, ref_page_seen, tables[page_num])
-            if len(self.tree[page_num]) > 0:
-                self.tree[page_num]["table"] = tables[page_num]
+            #if len(self.tree[page_num]) > 0:
+            self.tree[page_num]["table"] = tables[page_num]
         return self.tree
 
     def get_html_tree(self):
@@ -182,7 +182,7 @@ class TreeExtractor(object):
         elems = get_mentions_within_bbox(box, self.elems[page_num].mentions)
         elems.sort(cmp=reading_order)
         for elem in elems:
-            node_html += elem.get_text()+" "
+            node_html += "<word top="+str(elem.bbox[1])+" left="+str(elem.bbox[0])+" bottom="+str(elem.bbox[3])+" right="+str(elem.bbox[2])+">"+elem.get_text()+"</word> "
         return node_html
 
     def get_html_table(self, table, page_num):
@@ -194,7 +194,7 @@ class TreeExtractor(object):
             for i, row in enumerate(table_json[0]["data"]):
                 row_str = "<tr>"
                 for j, column in enumerate(row):
-                    row_str += "<td>"
+                    row_str += "<td top="+str(column["top"])+" left="+str(column["left"])+" bottom="+str(column["top"]+column["height"])+" right="+str(column["left"]+column["width"])+">"
                     row_str += column["text"]
                     row_str += "</td>"
                 row_str += "</tr>"

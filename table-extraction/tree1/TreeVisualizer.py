@@ -42,7 +42,8 @@ class TreeVisualizer():
                     draw.font_size = 20
                     draw.font_weight = 10
                     draw.fill_color =  colors[clust]
-                    draw.text(x=int(left), y=int(top), body=clust)
+                    if int(left)>0 and int(top)>0:
+                        draw.text(x=int(left), y=int(top), body=clust)
                     draw.pop()
             draw(img)
             img.save(filename=str(i)+'.png')

@@ -30,7 +30,7 @@ if __name__ == '__main__':
         model = load_model(args.model_path)
     extractor = TreeExtractor(args.pdf_file)
     if(not extractor.is_scanned()):
-        print "Document is not scanned, building tree structure"
+        print "Digitized PDF detected, building tree structure"
         pdf_tree = extractor.get_tree_structure(model)
         print "Tree structure built, creating html"
         pdf_html = extractor.get_html_tree()
@@ -38,6 +38,6 @@ if __name__ == '__main__':
         f = open(args.html_file, "w")
         f.write(pdf_html.encode("utf-8"))
         f.close()
-        # imgs = visualize_tree(args.pdf_file, pdf_tree)
+        imgs = visualize_tree(args.pdf_file, pdf_tree)
     else:
         print "Document is scanned, cannot build tree structure"
