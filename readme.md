@@ -8,7 +8,7 @@ This project is using the table-extraction tool (https://github.com/xiao-cheng/t
 
 ```pip install -r requirements.txt```
 
-Install ```poppler-utils``` for tree visualization
+```./install-poppler.sh```
 
 ## Environment variables 
 
