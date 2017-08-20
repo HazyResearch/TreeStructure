@@ -22,7 +22,7 @@ class TreeVisualizer():
         """
         self.pdf_file = pdf_file
 
-    def display_boxes(self, tree, alternate_colors=False):
+    def display_boxes(self, tree, html_path, alternate_colors=False):
         """
         Displays each of the bounding boxes passed in 'boxes' on images of the pdf
         pointed to by pdf_file
@@ -46,16 +46,16 @@ class TreeVisualizer():
                         draw.text(x=int(left), y=int(top), body=clust)
                     draw.pop()
             draw(img)
-            img.save(filename=str(i)+'.png')
+            img.save(filename=html_path+"page_"+str(i)+'.png')
             imgs.append(img)
         return imgs
 
-    def display_candidates(self, tree):
+    def display_candidates(self, tree, html_path):
         """
         Displays the bounding boxes corresponding to candidates on an image of the pdf
         boxes is a list of 5-tuples (page, top, left, bottom, right)
         """
-        imgs = self.display_boxes(tree, alternate_colors=True)
+        imgs = self.display_boxes(tree, html_path, alternate_colors=True)
         return display(*imgs)
 
     def pdf_to_img(self, page_num, pdf_dim=None):
