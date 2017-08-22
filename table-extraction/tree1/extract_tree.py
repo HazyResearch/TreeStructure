@@ -16,7 +16,8 @@ def load_model(model_path):
 
 def visualize_tree(pdf_file, pdf_tree, html_path):
     v = TreeVisualizer(pdf_file)
-    a = v.display_candidates(pdf_tree, html_path)
+    filename_prefix = os.path.basename(pdf_file)
+    a = v.display_candidates(pdf_tree, html_path, filename_prefix)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
@@ -35,7 +36,11 @@ if __name__ == '__main__':
         print "Tree structure built, creating html"
         pdf_html = extractor.get_html_tree()
         print "HTML created, writing to file"
-        f = open(args.html_path+"tree.html", "w")
+        pdf_filename = os.path.basename(args.pdf_file)
+        # Check html_path exists, create if not
+        if not os.path.exists(args.html_path):
+            os.makedirs(args.html_path)
+        f = open(args.html_path + pdf_filename + ".html", "w")
         f.write(pdf_html.encode("utf-8"))
         f.close()
         imgs = visualize_tree(args.pdf_file, pdf_tree, args.html_path)
