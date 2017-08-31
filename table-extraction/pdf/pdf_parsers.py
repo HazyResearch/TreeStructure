@@ -591,11 +591,28 @@ def parse_tree_structure(elems, font_stat, page_num, ref_page_seen, tables):
         m.feats[prefix+'x1'] = m.x1_grid = int(m.x1/grid_size)
         m.feats[prefix+'xc'] = m.xc_grid = int(m.xc/grid_size)
         m.feats[prefix+'yc'] = m.yc_grid = int(m.yc/grid_size)
+    
+    #Figures for this page
+    figures_page = get_figures(mentions, elems.layout.bbox, page_num, boxes_figures, page_width, page_height)
+
+    #Omit tables that overlap with figures
+    tables_page = []
+    for idx, table in enumerate(tables):
+        table_box = tuple(table[3:])
+        intersect = False
+        for fig in figures_page:
+            bool_overlap = (table_box[1] <= fig[6] and fig[4] <= table_box[3] and table_box[0] <= fig[5] and fig[3] <= table_box[2])
+            if(bool_overlap):
+                intersect = True
+                break
+        if not intersect:
+            tables_page.append(table)
+
     ##Eliminate tables from these boxes
     boxes = []
     for idx1, box in enumerate(mentions):
         intersect = False
-        for idx2, table in enumerate(tables):
+        for idx2, table in enumerate(tables_page):
             table_box = tuple(table[3:])
             # print , box.bbox
             bool_overlap = (table_box[1] <= box.bbox[2] and box.bbox[0] <= table_box[3] and table_box[0] <= box.bbox[3] and box.bbox[1] <= table_box[2])
@@ -604,7 +621,11 @@ def parse_tree_structure(elems, font_stat, page_num, ref_page_seen, tables):
                 break
         if(not intersect):
             boxes.append(box)
+    
     text_candidates, ref_page_seen = extract_text_candidates(boxes, elems.layout.bbox, avg_font_pts, width, char_width, page_num, ref_page_seen, boxes_figures, page_width, page_height)
+    text_candidates["figure"] = figures_page
+    text_candidates["table"] = tables_page
+    
     return text_candidates, ref_page_seen
 
 def extract_text_candidates(boxes, page_bbox, avg_font_pts, width, char_width, page_num, ref_page_seen, boxes_figures, page_width, page_height):
@@ -861,11 +882,34 @@ def extract_text_candidates(boxes, page_bbox, avg_font_pts, width, char_width, p
     tree["section_header"] = [(page_num, page_width, page_height) + (node.y0, node.x0, node.y1, node.x1) for node in newer_nodes if node.type=="Section Header" ]
     tree["header"] = [(page_num, page_width, page_height) + (node.y0, node.x0, node.y1, node.x1) for node in newer_nodes if node.type=="Header" ]
     tree["paragraph"] = [(page_num, page_width, page_height) + (node.y0, node.x0, node.y1, node.x1) for node in newer_nodes if node.type=="Paragraph"]
-    tree["figure"] = [(page_num, page_width, page_height) + (node.y0, node.x0, node.y1, node.x1) for node in newer_nodes if node.type=="Figure"]
+    # tree["figure"] = [(page_num, page_width, page_height) + (node.y0, node.x0, node.y1, node.x1) for node in newer_nodes if node.type=="Figure"]
     tree["figure_caption"] = [(page_num, page_width, page_height) + (node.y0, node.x0, node.y1, node.x1) for node in newer_nodes if node.type=="Figure Caption"]
     tree["table_caption"] = [(page_num, page_width, page_height) + (node.y0, node.x0, node.y1, node.x1) for node in newer_nodes if node.type=="Table Caption"]
     tree["list"] = [(page_num, page_width, page_height) + (node.y0, node.x0, node.y1, node.x1) for node in newer_nodes if node.type=="List"]
     return tree, new_ref_page_seen
+
+def get_figures(boxes, page_bbox, page_num, boxes_figures, page_width, page_height):
+    plane = Plane(page_bbox)
+    plane.extend(boxes)
+
+    nodes_figures = []
+
+    for fig_box in boxes_figures:
+        node_fig = Node(fig_box)
+        nodes_figures.append(node_fig)
+
+    merge_indices = [i for i in range(len(nodes_figures))]
+    page_stat = Node(boxes)
+    nodes,merge_indices = merge_nodes(nodes_figures, plane, page_stat, merge_indices)
+
+    ##Merging Nodes
+    new_nodes=[]
+    for idx in range(len(merge_indices)):
+        if(merge_indices[idx]==idx):
+            new_nodes.append(nodes[idx])
+
+    figures = [(page_num, page_width, page_height) + (node.y0, node.x0, node.y1, node.x1) for node in new_nodes]
+    return figures
 
 def merge_nodes(nodes, plane, page_stat, merge_indices):
     '''

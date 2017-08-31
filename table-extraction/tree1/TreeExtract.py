@@ -3,7 +3,7 @@ import numpy as np
 from utils.bbox_utils import get_rectangles, compute_iou
 from utils.lines_utils import reorder_lines, get_vertical_and_horizontal, extend_vertical_lines, \
     merge_vertical_lines, merge_horizontal_lines, extend_horizontal_lines
-from pdf.pdf_parsers import parse_layout, parse_tree_structure
+from pdf.pdf_parsers import parse_layout, parse_tree_structure, get_figures
 from pdf.pdf_utils import normalize_pdf, analyze_pages
 from utils.display_utils import pdf_to_img
 from ml.features import get_alignment_features, get_lines_features, get_mentions_within_bbox
@@ -98,8 +98,8 @@ class TreeExtractor(object):
         lines_bboxes = self.get_candidates_lines(page_num, elems)
         alignments_bboxes, alignment_features = self.get_candidates_alignments(page_num, elems)
         # print "Page Num: ", page_num, "Line bboxes: ", len(lines_bboxes), ", Alignment bboxes: ", len(alignments_bboxes)
-        alignment_features += get_alignment_features(lines_bboxes, elems, font_stat)
-        boxes = alignments_bboxes + lines_bboxes
+        # alignment_features += get_alignment_features(lines_bboxes, elems, font_stat)
+        boxes = alignments_bboxes #+ lines_bboxes
         if len(boxes) == 0:
             return [], []
         lines_features = get_lines_features(boxes, elems)
@@ -146,9 +146,9 @@ class TreeExtractor(object):
                     tables[page_num] = [table_candidates[i] for i in range(len(table_candidates)) if table_predictions[i]>0.5 ]
         ref_page_seen = False   #Manage References
         for page_num in self.elems.keys():
+            #Get Tree Structure for this page
             self.tree[page_num], ref_page_seen = parse_tree_structure(self.elems[page_num], self.font_stats[page_num], page_num, ref_page_seen, tables[page_num])
-            #if len(self.tree[page_num]) > 0:
-            self.tree[page_num]["table"] = tables[page_num]
+            # self.tree[page_num]["table"] = tables_page
         return self.tree
 
     def get_html_tree(self):

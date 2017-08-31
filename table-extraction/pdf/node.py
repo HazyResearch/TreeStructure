@@ -44,8 +44,10 @@ class Node(LTComponent):
         self.set_bbox(bound_elems(elems))
         # self.table_indicator = True
         self.type_counts = Counter(map(elem_type,elems))
-        if(elem_type(elems)!="figure"):
+        if(elem_type(elems) not in ["figure", "unknown"]):
             self.feat_counts = Counter(kv for e in elems for kv in e.feats.iteritems())
+        else:
+            self.feat_counts = 0
         self.type = "UNK"
         
     def merge(self, other):
