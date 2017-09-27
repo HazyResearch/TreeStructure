@@ -133,7 +133,7 @@ class TreeExtractor(object):
     def get_font_stats(self):
         return self.font_stats
 
-    def get_tree_structure(self, model):
+    def get_tree_structure(self, model, favor_figures):
         tables={}
         if(model is None):  #use heuristics to get tables
             for page_num in self.elems.keys():
@@ -146,11 +146,10 @@ class TreeExtractor(object):
                     table_predictions = model.predict(candidates_features)
                     tables[page_num] = [table_candidates[i] for i in range(len(table_candidates)) if table_predictions[i]>0.5 ]
         
-        ref_page_seen = False   #Manage References
+        ref_page_seen = False   #Manage References - indicator to indicate if reference has been seen
         for page_num in self.elems.keys():
             #Get Tree Structure for this page
-            self.tree[page_num], ref_page_seen = parse_tree_structure(self.elems[page_num], self.font_stats[page_num], page_num, ref_page_seen, tables[page_num])
-            # self.tree[page_num]["table"] = tables_page
+            self.tree[page_num], ref_page_seen = parse_tree_structure(self.elems[page_num], self.font_stats[page_num], page_num, ref_page_seen, tables[page_num], favor_figures)
         return self.tree
 
     def get_html_tree(self):
