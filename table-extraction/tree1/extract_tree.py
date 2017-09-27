@@ -2,6 +2,8 @@ import argparse
 import os
 import pickle
 import sys
+import codecs
+import re
 
 import numpy as np
 from ml.TableExtractML import TableExtractorML
@@ -40,9 +42,12 @@ if __name__ == '__main__':
         # Check html_path exists, create if not
         if not os.path.exists(args.html_path):
             os.makedirs(args.html_path)
-        f = open(args.html_path + pdf_filename + ".html", "w")
-        f.write(pdf_html.encode("utf-8"))
-        f.close()
+        reload(sys)
+        sys.setdefaultencoding('utf8')
+        pdf_html = re.sub(r'[\x00-\x1F]+', '', pdf_html)
+        # pdf_html = re.sub(";;", "", pdf_html)
+        with codecs.open(args.html_path + pdf_filename + ".html", encoding="utf-8", mode="w") as f:
+            f.write(pdf_html.encode("utf-8"))
         imgs = visualize_tree(args.pdf_file, pdf_tree, args.html_path)
     else:
         print "Document is scanned, cannot build tree structure"

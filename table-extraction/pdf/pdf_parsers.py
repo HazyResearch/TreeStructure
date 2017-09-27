@@ -25,6 +25,7 @@ def parse_layout(elems, font_stat, combine=False):
     page_width = elems.layout.width
     page_height = elems.layout.height
     boxes = elems.mentions
+
     avg_font_pts = get_most_common_font_pts(elems.mentions, font_stat)
     width = get_page_width(boxes + boxes_segments + boxes_figures + boxes_curves)
     char_width = get_char_width(boxes)
@@ -567,7 +568,11 @@ def parse_tree_structure(elems, font_stat, page_num, ref_page_seen, tables):
     page_width = elems.layout.width
     page_height = elems.layout.height
     mentions = elems.mentions
-    
+    # for mention in mentions:
+    #     print mention.get_text()
+    #     for obj in mention:
+    #         if isinstance(obj, LTChar):
+    #             print obj.get_text()
 
 
     avg_font_pts = get_most_common_font_pts(elems.mentions, font_stat)
@@ -596,6 +601,7 @@ def parse_tree_structure(elems, font_stat, page_num, ref_page_seen, tables):
     figures_page = get_figures(mentions, elems.layout.bbox, page_num, boxes_figures, page_width, page_height)
 
     #Omit tables that overlap with figures
+    # tables_page = tables
     tables_page = []
     for idx, table in enumerate(tables):
         table_box = tuple(table[3:])
@@ -625,7 +631,7 @@ def parse_tree_structure(elems, font_stat, page_num, ref_page_seen, tables):
     text_candidates, ref_page_seen = extract_text_candidates(boxes, elems.layout.bbox, avg_font_pts, width, char_width, page_num, ref_page_seen, boxes_figures, page_width, page_height)
     text_candidates["figure"] = figures_page
     text_candidates["table"] = tables_page
-    
+
     return text_candidates, ref_page_seen
 
 def extract_text_candidates(boxes, page_bbox, avg_font_pts, width, char_width, page_num, ref_page_seen, boxes_figures, page_width, page_height):
@@ -814,8 +820,9 @@ def extract_text_candidates(boxes, page_bbox, avg_font_pts, width, char_width, p
             if(idx < len(new_nodes)-1):
                 if((round(node.y0) == round(min_y_page) or math.floor(node.y0) == math.floor(min_y_page)) and node.y1-node.y0<2*avg_font_pts): #can be header
                     idx_new = idx + 1
-                    while((round(node.y0) == round(new_nodes[idx_new].y0)) or (math.floor(node.y0) == math.floor(new_nodes[idx_new].y0)) and idx_new<len(new_nodes)-1):
-                        idx_new += 1
+                    if idx_new < len(new_nodes)-1:
+                        while(idx_new<len(new_nodes)-1 and (round(node.y0) == round(new_nodes[idx_new].y0)) or (math.floor(node.y0) == math.floor(new_nodes[idx_new].y0))):
+                            idx_new += 1
                     if(idx_new<len(new_nodes)-1):
                         if(new_nodes[idx_new].y0 - node.y0 > 1.5*avg_font_pts):
                             node.type = "Header"

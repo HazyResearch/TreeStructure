@@ -1,4 +1,5 @@
 import numpy as np
+import re
 
 from utils.bbox_utils import get_rectangles, compute_iou
 from utils.lines_utils import reorder_lines, get_vertical_and_horizontal, extend_vertical_lines, \
@@ -144,6 +145,7 @@ class TreeExtractor(object):
                 if(len(candidates_features) != 0):
                     table_predictions = model.predict(candidates_features)
                     tables[page_num] = [table_candidates[i] for i in range(len(table_candidates)) if table_predictions[i]>0.5 ]
+        
         ref_page_seen = False   #Manage References
         for page_num in self.elems.keys():
             #Get Tree Structure for this page
@@ -170,20 +172,74 @@ class TreeExtractor(object):
                     fig_html = "<figure bbox="+",".join(fig_str)+"></figure>"
                     page_html += fig_html
                 else:
-                    box_html = self.get_html_others(box[1:], page_num)
-                    page_html += "<"+box[0]+">"+box_html+"</"+box[0]+">"
+                    box_html, char_html, top_html, left_html, bottom_html, right_html = self.get_html_others(box[1:], page_num)
+                    page_html += "<"+box[0]+" char='"+char_html+"', top='"+top_html+"', left='"+left_html+"', bottom='"+bottom_html+"', right='"+right_html+"'>"+box_html+"</"+box[0]+">"
             page_html += "</div>"
             self.html += page_html
         self.html += "</html>"
         return self.html
 
+    def get_word_boundaries(self, mention):
+        mention_text = mention.get_text()
+        mention_chars = []
+        for obj in mention:
+            if isinstance(obj, LTChar):
+                x0, y0, x1, y1 = obj.bbox
+                mention_chars.append([obj.get_text(), y0, x0, y1, x1])
+        words = []
+        mention_words = mention_text.split()
+        char_idx = 0
+        for word in mention_words:
+            curr_word = [word, float("Inf"), float("Inf"), float("-Inf"), float("-Inf")]
+            len_idx = 0
+            while len_idx<len(word):
+                if mention_chars[char_idx][0] == " ":
+                    char_idx += 1
+                    continue
+                if word[len_idx]!=mention_chars[char_idx][0]:
+                    print "Out of order", word, mention_chars[char_idx][0]
+                curr_word[1] = min(curr_word[1], mention_chars[char_idx][1])
+                curr_word[2] = min(curr_word[2], mention_chars[char_idx][2])
+                curr_word[3] = max(curr_word[3], mention_chars[char_idx][3])
+                curr_word[4] = max(curr_word[4], mention_chars[char_idx][4])
+                len_idx += len(mention_chars[char_idx][0])
+                char_idx += 1
+            words.append(curr_word)
+        return words
+
+    def get_char_boundaries(self, mention):
+        mention_text = mention.get_text()
+        mention_chars = []
+        for obj in mention:
+            if isinstance(obj, LTChar):
+                x0, y0, x1, y1 = obj.bbox
+                mention_chars.append([obj.get_text(), y0, x0, y1, x1])
+        return mention_chars
+
     def get_html_others(self, box, page_num):
         node_html = ""
+        top_html = ""
+        left_html = ""
+        bottom_html = ""
+        right_html = ""
+        char_html = ""
+        sep = " "
         elems = get_mentions_within_bbox(box, self.elems[page_num].mentions)
         elems.sort(cmp=reading_order)
         for elem in elems:
-            node_html += "<word top="+str(elem.bbox[1])+" left="+str(elem.bbox[0])+" bottom="+str(elem.bbox[3])+" right="+str(elem.bbox[2])+">"+elem.get_text()+"</word> "
-        return node_html
+            chars = self.get_char_boundaries(elem)
+            for char in chars:
+                if not re.match(r'[\x00-\x1F]', char[0].encode('utf-8')):
+                    char_html += str(char[0].encode('utf-8')).replace("'",'"')+sep
+                    top_html += str(char[1])+sep
+                    left_html += str(char[2])+sep
+                    bottom_html += str(char[3])+sep
+                    right_html += str(char[4])+sep
+            words = self.get_word_boundaries(elem)
+            for word in words:
+                # node_html += "<word top="+str(word[1])+" left="+str(word[2])+" bottom="+str(word[3])+" right="+str(word[4])+">"+str(word[0].encode('utf-8'))+"</word> "
+                node_html += str(word[0].encode('utf-8'))+" "
+        return node_html, char_html, top_html, left_html, bottom_html, right_html
 
     def get_html_table(self, table, page_num):
         table_str = [str(i) for i in table]
@@ -194,9 +250,31 @@ class TreeExtractor(object):
             for i, row in enumerate(table_json[0]["data"]):
                 row_str = "<tr>"
                 for j, column in enumerate(row):
-                    row_str += "<td top="+str(column["top"])+" left="+str(column["left"])+" bottom="+str(column["top"]+column["height"])+" right="+str(column["left"]+column["width"])+">"
-                    row_str += column["text"]
-                    row_str += "</td>"
+                    box = [column["top"], column["left"], column["top"]+column["height"], column["left"]+column["width"]]
+                    top_html = ""
+                    left_html = ""
+                    bottom_html = ""
+                    right_html = ""
+                    word_html = ""
+                    sep = " "
+                    elems = get_mentions_within_bbox(box, self.elems[page_num].mentions)
+                    elems.sort(cmp=reading_order)
+                    word_td = ""
+                    for elem in elems:
+                        words = self.get_word_boundaries(elem)
+                        for word in words:
+                            if not re.match(r'[\x00-\x1F]', word[0].encode('utf-8')):
+                                word_td += word[0] + " "
+                                word_html += str(word[0].encode('utf-8'))+sep
+                                top_html += str(word[1])+sep
+                                left_html += str(word[2])+sep
+                                bottom_html += str(word[3])+sep
+                                right_html += str(word[4])+sep
+                    row_str += "<td word='"+word_html+"', top='"+top_html+"', left='"+left_html+"', bottom='"+bottom_html+"', right='"+right_html+"'>"+word_td[:-1].encode("utf-8")+"</td>"
+                    # row_str += "<td word='"+word_html+"', top='"+top_html+"', left='"+left_html+"', bottom='"+bottom_html+"', right='"+right_html+"'>"+str(column["text"].encode('utf-8'))+"</td>"
+                    # row_str += "<td char='"+char_html+"', top="+str(column["top"])+", left="+str(column["left"])+", bottom="+str(column["top"]+column["height"])+", right="+str(column["left"]+column["width"])+">"
+                    # row_str += str(column["text"].encode('utf-8'))
+                    # row_str += "</td>"
                 row_str += "</tr>"
                 table_html += row_str
             table_html += "</table>"
