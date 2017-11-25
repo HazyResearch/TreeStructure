@@ -47,6 +47,8 @@ if __name__ == '__main__':
     parser.add_argument('--pdf_file', type=str, help='pdf file name for which tree structure needs to be extracted')
     parser.add_argument('--html_path', type=str, help='path where tree structure must be saved', default="./results/")
     parser.add_argument('--favor_figures', type=str, help='whether figures must be favored over other parts such as tables and section headers', default="True")
+    parser.add_argument('--visualize', dest="visualize", action="store_true", help='whether to output visualization images for the tree')
+    parser.set_defaults(visualize=False)
     args = parser.parse_args()
     model = None
     if (args.model_path is not None):
@@ -67,6 +69,7 @@ if __name__ == '__main__':
         pdf_html = re.sub(r'[\x00-\x1F]+', '', pdf_html)
         with codecs.open(args.html_path + pdf_filename + ".html", encoding="utf-8", mode="w") as f:
             f.write(pdf_html.encode("utf-8"))
-        imgs = visualize_tree(args.pdf_file, pdf_tree, args.html_path)
+        if args.visualize:
+            imgs = visualize_tree(args.pdf_file, pdf_tree, args.html_path)
     else:
         print "Document is scanned, cannot build tree structure"
