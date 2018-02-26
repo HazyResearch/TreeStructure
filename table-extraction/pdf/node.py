@@ -43,7 +43,7 @@ class Node(LTComponent):
         self.set_bbox(bound_elems(elems))
         self.table_indicator = True
         self.type_counts = Counter(map(elem_type, elems))
-        self.feat_counts = Counter(kv for e in elems for kv in e.feats.iteritems())
+        self.feat_counts = Counter(kv for e in elems for kv in e.feats.items())
 
     def merge(self, other):
         self.elems.extend(other.elems)
@@ -87,7 +87,7 @@ class Node(LTComponent):
             return False
         has_many_x_align = False
         has_many_y_align = False
-        for k, v in self.feat_counts.iteritems():
+        for k, v in self.feat_counts.items():
             font_key = k[0]
             if v >= 2 and '-' in font_key:  # Text row or column with more than 2 elements
                 if font_key[-2] == 'x': has_many_x_align = True

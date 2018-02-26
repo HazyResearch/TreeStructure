@@ -52,8 +52,8 @@ def cluster_vertically_aligned_boxes(boxes, page_bbox, avg_font_pts, width, char
         return []
     plane = Plane(page_bbox)
     plane.extend(boxes)
-    cid2obj = [set([i]) for i in xrange(len(boxes))]  # initialize clusters
-    obj2cid = range(len(boxes))  # default object map to cluster with its own index
+    cid2obj = [set([i]) for i in range(len(boxes))]  # initialize clusters
+    obj2cid = [i for i in range(len(boxes))]  # default object map to cluster with its own index
     prev_clusters = obj2cid
     while (True):
         for i1, b1 in enumerate(boxes):
@@ -90,8 +90,8 @@ def cluster_vertically_aligned_boxes(boxes, page_bbox, avg_font_pts, width, char
         prev_clusters = obj2cid
     clusters = [[boxes[i] for i in cluster] for cluster in filter(bool, cid2obj)]
 
-    rid2obj = [set([i]) for i in xrange(len(boxes))]  # initialize clusters
-    obj2rid = range(len(boxes))  # default object map to cluster with its own index
+    rid2obj = [set([i]) for i in range(len(boxes))]  # initialize clusters
+    obj2rid = [i for i in range(len(boxes))]  # default object map to cluster with its own index
     prev_clusters = obj2rid
     while (True):
         for i1, b1 in enumerate(boxes):
@@ -169,8 +169,8 @@ def cluster_vertically_aligned_boxes(boxes, page_bbox, avg_font_pts, width, char
     avg_node_space = defaultdict(float)
     avg_node_space_norm = defaultdict(float)
 
-    cid2obj = [set([i]) for i in xrange(len(boxes))]  # initialize clusters
-    obj2cid = range(len(boxes))  # default object map to cluster with its own index
+    cid2obj = [set([i]) for i in range(len(boxes))]  # initialize clusters
+    obj2cid = [i for i in range(len(boxes))]  # default object map to cluster with its own index
     prev_clusters = obj2cid
     # add the code for merging close text boxes in particular row
     while (True):

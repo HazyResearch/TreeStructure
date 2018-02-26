@@ -42,7 +42,7 @@ class CustomPDFPageAggregator(PDFPageAggregator):
         '''
         shape = ''.join(x[0] for x in path)
         prev_split = 0
-        for i in xrange(len(shape)):
+        for i in range(len(shape)):
             if shape[i] == 'm' and prev_split != i:
                 self.paint_single_path(gstate, stroke, fill, evenodd, path[prev_split:i])
                 prev_split = i
@@ -64,19 +64,19 @@ class CustomPDFPageAggregator(PDFPageAggregator):
 
         pts = []
         for p in path:
-            for i in xrange(1, len(p), 2):
+            for i in range(1, len(p), 2):
                 pts.append(apply_matrix_pt(self.ctm, (p[i], p[i + 1])))
 
         # Line mode
         if self.line_only_shape.match(shape):
             # check for sloped lines first
             has_slope = False
-            for i in xrange(len(pts) - 1):
+            for i in range(len(pts) - 1):
                 if pts[i][0] != pts[i + 1][0] and pts[i][1] != pts[i + 1][1]:
                     has_slope = True
                     break
             if not has_slope:
-                for i in xrange(len(pts) - 1):
+                for i in range(len(pts) - 1):
                     self.cur_item.add(LTLine(gstate.linewidth, pts[i], pts[i + 1]))
 
                 # Adding the closing line for a polygon, especially rectangles
