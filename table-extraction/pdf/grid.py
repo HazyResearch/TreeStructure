@@ -119,7 +119,7 @@ class Grid(object):
 #                intervals, groups = project_onto(cell.texts, axis='x', self.min_cell_size)
                 prev = None
                 if debug_print:
-                    print '='*50
+                    print('='*50)
                 for m in cell.texts:
 #                     print m.yc_grid, m.clean_text
                     subrow_across_cell[m.yc_grid].append(m)

@@ -6,7 +6,7 @@ Created on Oct 21, 2015
 
 '''
 from collections import namedtuple
-from itertools import izip
+# from itertools import zip
 import numpy as np
 
 # bbox indices
@@ -74,7 +74,7 @@ def area(bbox):
     return (bbox[x1]-bbox[x0])*(bbox[y1]-bbox[y0])
 
 def l1(c1,c2):
-    return sum(abs(v1-v2) for v1, v2 in izip(c1,c2)) 
+    return sum(abs(v1-v2) for v1, v2 in zip(c1,c2)) 
 
 def segment_diff(s1,s2):
     '''

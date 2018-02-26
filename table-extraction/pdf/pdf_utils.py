@@ -113,7 +113,7 @@ def analyze_pages(file_name, char_margin=1.0):
             try:
                 interpreter.process_page(page)
             except OverflowError as oe:
-                print oe, ', skipping page', page_num, 'of', file_name
+                print(oe, ', skipping page', page_num, 'of', file_name)
                 traceback.print_exc()
                 continue
             layout = device.get_result()
@@ -201,9 +201,9 @@ def _print_dict(elem_dict):
     '''
     for key, value in sorted(elem_dict.iteritems()):
         if isinstance(value, collections.Iterable):
-            print key, len(value)
+            print(key, len(value))
         else:
-            print key, value
+            print(key, value)
 
 
 def _font_size_of(ch):

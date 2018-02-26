@@ -198,7 +198,7 @@ def recursive_xy_divide(elems, avg_font_size):
     avg_font_size: the minimum gap size between elements below
     which we consider interval continuous.
     '''
-    print avg_font_size
+    print(avg_font_size)
     objects = list(elems.mentions)
     objects.extend(elems.segments)
     bboxes = []
@@ -242,7 +242,7 @@ def recursive_xy_divide(elems, avg_font_size):
     full_page_bbox = (0, 0, elems.layout.width, elems.layout.height)
     # Filter out invalid objects
     objects = [o for o in objects if inside(full_page_bbox,o.bbox)]
-    print 'avg_font_size for dividing',avg_font_size
+    print('avg_font_size for dividing',avg_font_size)
     tree = divide(objects, full_page_bbox) if objects else []
     return bboxes, tree
      

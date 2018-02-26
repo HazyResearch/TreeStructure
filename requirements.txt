@@ -5,4 +5,6 @@ bintrees
 beautifulsoup4
 lxml
 sklearn
-pickle
+pdfminer.six
+pandas
+scipy

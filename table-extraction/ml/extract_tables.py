@@ -30,7 +30,7 @@ def get_features_and_labels(pdf_list, gt_list):
     tables = []
     for i, pdf_file in enumerate(pdf_files):
         if i % 10 == 0:
-            print "{} documents processed out of {}".format(i, len(pdf_files))
+            print("{} documents processed out of {}".format(i, len(pdf_files)))
         gt_tables = get_bboxes_from_line(gt[i])
         extractor = TableExtractorML(os.environ['DATAPATH'] + pdf_file)
         bboxes, features = extractor.get_candidates_and_features()
@@ -45,20 +45,20 @@ def get_features_and_labels(pdf_list, gt_list):
             y = np.concatenate((y, labels), axis=0)
             tables = np.concatenate((tables, bboxes), axis=0)
     X = preprocessing.scale(X, axis=0)
-    print "Features computed!"
+    print("Features computed!")
     return X, y, tables
 
 
 def load_train_data(pdf_list, gt_list):
     if os.path.exists(pdf_list + '.features.pkl'):
-        print "Loading precomputed features for {}..".format(pdf_list)
+        print("Loading precomputed features for {}..".format(pdf_list))
         # load pickled data
         X = pickle.load(open(pdf_list + '.features.pkl', 'rb'))
         y = pickle.load(open(pdf_list + '.labels.pkl', 'rb'))
         tables = pickle.load(open(pdf_list + '.candidates.pkl', 'rb'))
-        print "Features loaded!"
+        print("Features loaded!")
     else:
-        print "Building feature matrix for {}".format(pdf_list)
+        print("Building feature matrix for {}".format(pdf_list))
         # compute and pickle feature matrix
         X, y, tables = get_features_and_labels(pdf_list, gt_list)
         pickle.dump(X, open(pdf_list + '.features.pkl', 'wb'))
@@ -72,7 +72,7 @@ def get_features(pdf_list):
     tables = []
     for i, pdf_file in enumerate(pdf_files):
         if i % 10 == 0:
-            print "{} documents processed out of {}".format(i, len(pdf_files))
+            print("{} documents processed out of {}".format(i, len(pdf_files)))
         extractor = TableExtractorML(os.environ['DATAPATH'] + pdf_file)
         bboxes, features = extractor.get_candidates_and_features()
         bboxes = [[i] + list(bbox) for bbox in bboxes]
@@ -83,19 +83,19 @@ def get_features(pdf_list):
             X = np.concatenate((X, np.array(features)), axis=0)
             tables = np.concatenate((tables, bboxes), axis=0)
     X = preprocessing.scale(X, axis=0)
-    print "Features computed!"
+    print("Features computed!")
     return X, tables
 
 
 def load_test_data(pdf_list):
     if os.path.exists(pdf_list + '.features.pkl'):
-        print "Loading precomputed features for {}..".format(pdf_list)
+        print("Loading precomputed features for {}..".format(pdf_list))
         # load pickled data
         X = pickle.load(open(pdf_list + '.features.pkl', 'rb'))
         tables = pickle.load(open(pdf_list + '.candidates.pkl', 'rb'))
-        print "Features loaded!"
+        print("Features loaded!")
     else:
-        print "Building feature matrix for {}".format(pdf_list)
+        print("Building feature matrix for {}".format(pdf_list))
         # compute and pickle feature matrix
         X, tables = get_features(pdf_list)
         pickle.dump(X, open(pdf_list + '.features.pkl', 'wb'))
@@ -149,29 +149,29 @@ def compute_stats(y_pred, y_test):
     recall = metrics.recall_score(y_test, y_pred)
     precision = metrics.precision_score(y_test, y_pred)
     accuracy = metrics.accuracy_score(y_test, y_pred)
-    print "Classification Metrics:"
-    print "(Note that these statistics are not for the table detection task but for the classification problem."
-    print "To run evaluation for the table detection class, refer to the script char_level_evaluation.py)"
-    print "Precision: ", precision
-    print "Recall: ", recall
-    print "F1-score: ", 2 * precision * recall / (precision + recall)
-    print "Accuracy:", accuracy
+    print("Classification Metrics:")
+    print("(Note that these statistics are not for the table detection task but for the classification problem.")
+    print("To run evaluation for the table detection class, refer to the script char_level_evaluation.py")
+    print("Precision: ", precision)
+    print("Recall: ", recall)
+    print("F1-score: ", 2 * precision * recall / (precision + recall))
+    print("Accuracy:", accuracy)
 
 
 def train_model(X_train, y_train, model_path):
-    print "Training model..."
+    print("Training model...")
     logistic = linear_model.LogisticRegression()
     logistic.fit(X_train, y_train)
-    print "Model trained!"
+    print("Model trained!")
     pickle.dump(logistic, open(model_path, 'wb'))
-    print "Model saved!"
+    print("Model saved!")
     return logistic
 
 
 def load_model(model_path):
-    print "Loading pretrained model..."
+    print("Loading pretrained model...")
     model = pickle.load(open(model_path, 'rb'))
-    print "Model loaded!"
+    print("Model loaded!")
     return model
 
 
@@ -240,14 +240,14 @@ if __name__ == '__main__':
         X_test, y_test, tables_test = load_train_data(args.test_pdf, args.gt_test)
         # predict tables for dev tables and evaluate
         y_pred = model.predict(X_test)
-        print "Testing for {} pdf documents".format(num_test)
+        print("Testing for {} pdf documents".format(num_test))
         compute_stats(y_pred, y_test)
     elif args.mode == 'test':
         # load test data (with no ground truth)
         X_test, tables_test = load_test_data(args.test_pdf)
         y_pred = model.predict(X_test)
     else:
-        print "Mode not recognized, pick dev or test."
+        print("Mode not recognized, pick dev or test.")
         sys.exit()
     predicted_tables = tables_test[np.flatnonzero(y_pred)]
     # todo: remove duplicate tables
