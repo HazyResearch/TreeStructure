@@ -29,8 +29,6 @@ def get_features_and_labels(pdf_list, gt_list):
     gt = [gt.rstrip() for gt in open(gt_list).readlines()]
     tables = []
     for i, pdf_file in enumerate(pdf_files):
-        if i < 20:
-            pass
         if i % 10 == 0:
             print("{} documents processed out of {}".format(i, len(pdf_files)))
         gt_tables = get_bboxes_from_line(gt[i])
