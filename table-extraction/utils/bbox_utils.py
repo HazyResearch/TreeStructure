@@ -47,7 +47,6 @@ def get_rectangles(vertical_lines, horizontal_lines):
     :param horizontal_lines: list of horizontal lines coordinates
     :return: List of bounding boxes for tables
     """
-    # TODO : add tolerance
     rectangles = []
     i = 0
     j = 0
@@ -56,7 +55,7 @@ def get_rectangles(vertical_lines, horizontal_lines):
             if int(horizontal_lines[i][1]) == int(vertical_lines[j][1]):
                 h = horizontal_lines[i]
                 v = vertical_lines[j]
-                rectangles += [(h[0], h[1], v[2], h[3])]
+                rectangles += [(v[0], h[1], v[2], h[3])]
                 i += 1
                 j += 1
             elif int(horizontal_lines[i][1]) < int(vertical_lines[j][1]):
@@ -67,6 +66,7 @@ def get_rectangles(vertical_lines, horizontal_lines):
             i += 1
         else:
             j += 1
+    rectangles = [r for r in rectangles if ((r[2]-r[0])>TOLERANCE and (r[3]-r[1])>TOLERANCE)]
     return rectangles
 
 
