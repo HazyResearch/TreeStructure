@@ -116,7 +116,6 @@ def get_alignment_features(line_bboxes, elems, font_stat):
             m.feats[prefix + 'x1'] = m.x1_grid = int(m.x1 / grid_size)
             m.feats[prefix + 'xc'] = m.xc_grid = int(m.xc / grid_size)
             m.feats[prefix + 'yc'] = m.yc_grid = int(m.yc / grid_size)
-
         nodes, nodes_features = cluster_vertically_aligned_boxes(boxes, elems.layout.bbox, avg_font_pts, width,
                                                                  char_width, boxes_segments, boxes_curves,
                                                                  boxes_figures, page_width, True)

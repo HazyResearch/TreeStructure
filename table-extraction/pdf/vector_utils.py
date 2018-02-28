@@ -108,6 +108,11 @@ def intersect(a,b):
     '''
     Check if two rectangles intersect
     '''
+    # check that the boxes have w and h > 0 
+    if (a[x0] == a[x1] or a[y0] == a[y1]):
+        return False
+    if (b[x0] == b[x1] or b[y0] == b[y1]):
+        return False
     return a[x0] <= b[x1] and b[x0] <= a[x1] \
         and a[y0] <= b[y1] and b[y0] <= a[y1]
 
